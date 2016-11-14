@@ -1,0 +1,333 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.firebase.com/js/client/1.1.1/firebase.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+<script type="text/javascript" src="./bootstrap-progressbar-0.8.4/bootstrap-progressbar.js"></script>
+
+<style>
+  /*Simple reset*/
+  * {margin: 0; padding: 0;}
+
+  body {
+    /*You can use any kind of background here.*/
+    background: #6b92b9;
+  }
+  canvas {
+    display: block;
+    position:fixed; top:0;left:0;
+    z-index:-1;
+  }
+  rest {
+    z-index:1;
+  }
+
+
+
+  .six-sec-ease-in-out {
+    -webkit-transition: width 6s ease-in-out;
+    -moz-transition: width 6s ease-in-out;
+    -ms-transition: width 6s ease-in-out;
+    -o-transition: width 6s ease-in-out;
+    transition: width 6s ease-in-out;
+}
+
+</style>
+
+
+<!-- https://drive.google.com/folderview?id=0B4ITwqxMmrB6Z0h3NEczeW4yREk&usp=sharing -->
+</head>
+
+<body>
+
+<script>
+	var wolne;
+	var zajete;
+  var glosowal = [];
+	var myFirebaseRef;
+  $(document).ready(function () {
+      // $('.progress .progress-bar').progressbar();  // bootstrap 3
+      	myFirebaseRef = new Firebase("https://torid-fire-6241.firebaseio.com/");
+        	var zajete = new Firebase("https://torid-fire-6241.firebaseio.com/zajete");
+      	myFirebaseRef.child("wolne").on("value", function(snapshot) {
+      		  wolne = snapshot.te();
+      });
+      	myFirebaseRef.child("zajete").on("value", function(snapshot) {
+      		  zajete = snapshot.te();
+      });
+        myFirebaseRef.child("juzglosowal").on("value", function(snapshot) {
+            glosowal = snapshot.te();
+      });
+
+// 	myFirebaseRef.child("pracuje").on("value", function(snapshot) {
+// 		if (snapshot.val()){
+// 		  alert("ktos losuje");  // Alerts "San Francisco"
+// 		}
+// });
+
+})
+
+  var onComplete = function(error) {
+  if (error) {
+    console.log('Synchronization failed');
+  } else {
+    console.log('Synchronization succeeded');
+  }
+};
+
+function losuj(ktosty){
+  var wolne_alenieja = clone(wolne);
+  var x = Object.keys(wolne_alenieja).filter(function(key) {
+    return wolne[key] == ktosty;})[0];
+
+  delete wolne_alenieja[x];
+  if (!jQuery.isEmptyObject(wolne_alenieja)) {
+
+  	var wylosowane = Object.keys(wolne_alenieja)[Math.floor(Math.random()*Object.keys(wolne_alenieja).length)];
+  	console.log(wylosowane);
+  	console.log(wolne_alenieja[wylosowane])
+    $("#al strong" ).text(wolne_alenieja[wylosowane]);
+
+    var wolne_db = new Firebase("https://torid-fire-6241.firebaseio.com/wolne/"+wylosowane);
+    myFirebaseRef.child('zajete').push(wolne_alenieja[wylosowane]);
+    myFirebaseRef.child('wolne/'+wylosowane).remove(onComplete);
+
+
+    myFirebaseRef.child('juzglosowal').push(ktosty);
+
+    return true;
+  }
+  else{
+    $("#err").text("ojej, już wszyscy wylosowani!");
+    $("#err").show();
+    return false;
+
+  }
+
+  function clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+    }
+    return copy;
+}
+
+}
+
+
+</script>
+
+
+<canvas id="canvas"></canvas>
+
+<div id="rest" class="container">
+
+<center>
+  <div class="cloud" style="top: 60px; left: -236px; width: 300px; height: 169px; z-index: 2; opacity: 10.6919289091787; background-image: url(http://maran-emil.de/experiments/demo2/img/santa.png);"></div>
+</center>
+
+<div class="row" id="combo">
+<div class="col-xs-12 col-md-offset-3 col-md-6">
+<h4>
+  <span class="label label-primary">Kto ty jesteś?</span>
+  <select class="combobox">
+  <option></option>
+  <option value="Kuba">Kuba</option>
+  <option value="Marysia">Marysia</option>
+  <option value="Ania">Ania</option>
+  <option value="Valercia">Valercia</option>
+  <option value="Staś">Staś</option>
+  <option value="Marzenka">Marzenka</option>
+  <option value="Bartek">Bartek</option>
+</select>
+</h4>
+</div>
+</div>
+
+  <div class="row">
+    <div id="ototo" class="col-xs-12  col-md-offset-3 col-md-6"  >
+    <span>
+      <button type="button" class="btn btn-lg btn-primary" id="losowanie" style="display: none;">Losuję!</button>
+      </span>
+      <div class="progress progress-striped active" id="pb" style="display: none;">
+        <div class="progress-bar six-sec-ease-in-out" role="progressbar"  id="progressbar" data-transitiongoal="0" >
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-offset-4 col-md-4"> 
+          <div id='al' class="alert alert-success" role="alert" style="display: none;">
+            <center><strong>Well done!</strong></center>
+          </div>
+          <div id='err' class="alert alert-danger" role="alert" style="display: none;">
+            <center><strong>oo, już głosowałe/aś, tak nie można!</strong></center>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+</div>
+
+<script>
+  var juzglosowal = false;
+  var ktosty = "";
+
+  $("#losowanie").click(function(){
+    if(!juzglosowal) { 
+      var robimy= losuj(ktosty);
+      if (robimy) {
+      $('#pb').show();
+      $('#pb .progress-bar').each(function () {
+        var $pb = $(this);
+        $pb.attr('data-transitiongoal', 100);
+        $pb.progressbar({done: function(){
+          $('#pb').hide();
+          $("#al").show();
+
+        }});
+      });
+      juzglosowal = true;
+    }
+    }
+    else {
+          $("#err").show();
+
+    }
+  }
+  );
+
+
+  $("#combo").change(function(){
+    $( "#combo option:selected" ).each(function(){
+      ktosty = $(this).text();
+      var x;
+      if (glosowal) {
+        x = Object.keys(glosowal).filter(function(key) {
+          return glosowal[key] == ktosty;})[0];
+      }
+      else{
+        x = false;
+      }
+      if( x) {
+        $("#err").text("ojej, ty już glosowałe/aś!");
+        $("#err").show();
+      }
+      else {
+        $("#losowanie").show();
+      }
+
+    });
+
+
+  });
+
+
+</script>
+
+
+
+
+  <script>
+  window.onload = function(){
+  //canvas init
+  var canvas = document.getElementById("canvas");
+  var ctx = canvas.getContext("2d");
+  
+  //canvas dimensions
+  var W = window.innerWidth;
+  var H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+  
+  //snowflake particles
+  var mp = 25; //max particles
+  var particles = [];
+  for(var i = 0; i < mp; i++)
+  {
+    particles.push({
+      x: Math.random()*W, //x-coordinate
+      y: Math.random()*H, //y-coordinate
+      r: Math.random()*4+1, //radius
+      d: Math.random()*mp //density
+    })
+  }
+  
+  //Lets draw the flakes
+  function draw()
+  {
+    ctx.clearRect(0, 0, W, H);
+    
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.beginPath();
+    for(var i = 0; i < mp; i++)
+    {
+      var p = particles[i];
+      ctx.moveTo(p.x, p.y);
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true);
+    }
+    ctx.fill();
+    update();
+  }
+  
+  //Function to move the snowflakes
+  //angle will be an ongoing incremental flag. Sin and Cos functions will be applied to it to create vertical and horizontal movements of the flakes
+  var angle = 0;
+  function update()
+  {
+    angle += 0.01;
+    for(var i = 0; i < mp; i++)
+    {
+      var p = particles[i];
+      //Updating X and Y coordinates
+      //We will add 1 to the cos function to prevent negative values which will lead flakes to move upwards
+      //Every particle has its own density which can be used to make the downward movement different for each flake
+      //Lets make it more random by adding in the radius
+      p.y += Math.cos(angle+p.d) + 1 + p.r/2;
+      p.x += Math.sin(angle) * 2;
+      
+      //Sending flakes back from the top when it exits
+      //Lets make it a bit more organic and let flakes enter from the left and right also.
+      if(p.x > W+5 || p.x < -5 || p.y > H)
+      {
+        if(i%3 > 0) //66.67% of the flakes
+        {
+          particles[i] = {x: Math.random()*W, y: -10, r: p.r, d: p.d};
+        }
+        else
+        {
+          //If the flake is exitting from the right
+          if(Math.sin(angle) > 0)
+          {
+            //Enter from the left
+            particles[i] = {x: -5, y: Math.random()*H, r: p.r, d: p.d};
+          }
+          else
+          {
+            //Enter from the right
+            particles[i] = {x: W+5, y: Math.random()*H, r: p.r, d: p.d};
+          }
+        }
+      }
+    }
+  }
+  
+  //animation loop
+  setInterval(draw, 33);
+}
+  </script>
+
+</body>
+</html>
